@@ -26,9 +26,9 @@ module TestBech_Top;
 	
 	covergroup control_bundle;
 		coverpoint control {
-			bins reset = { [4'h8: $] };
-			bins branch = { [4'h4: 4'h7]};
-			bins updatepc = {4'h2,4'h3,4'h6,4'h7};
+			bins reset = { [4'h0: 4'h7] };
+			bins branch = { [4'h8: $]};
+			bins updatepc = {4'hA,4'hB,4'hE,4'hF};
 		}
 	endgroup
 	

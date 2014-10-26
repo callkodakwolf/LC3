@@ -1,14 +1,13 @@
-
-module fetch(clk, rst, enable_updatepc, enable_fetch, pc, npc, rd, taddr, br_taken);
-	input clk;
-	input rst;
-	input enable_updatepc;
-	input enable_fetch;
-//	input [3:0] state;
-	output [15:0] pc, npc;
-	input [15:0] taddr;	//target address of control instruction
-	input br_taken;		
-	output rd;			//Memory read control 
+// @positive clk edge, output signals are created for consuming blocks
+module fetch(input clk;
+			input rst;
+			input enable_updatepc;
+			input enable_fetch;
+			output [15:0] pc, npc;
+			input [15:0] taddr;	//target address of control instruction
+			input br_taken;		
+			output rd;			//Memory read control 
+			);
 	
 	reg [15:0] pc_reg;
 	wire [15:0] pc_input, target_pc ;

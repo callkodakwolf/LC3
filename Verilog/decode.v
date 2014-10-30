@@ -10,7 +10,7 @@ module decode(
 	output wire [5:0] 	e_control,
 	output reg [1:0] 	w_control,
 	output reg [15:0] 	npc_out,
-	output reg 			mem_control
+	output reg 		mem_control
 	);
 
 	parameter BR = 4'b0000;
@@ -28,13 +28,13 @@ module decode(
 	
 	reg [1:0] 	alu_control;
 	reg [1:0] 	pcselect1;
-	reg [1:0] 	pcselect2;
+	reg 	 	pcselect2;
 	reg 		op2select;
 	
 	assign e_control = { alu_control, pcselect1, pcselect2, op2select};
 	
 	
-	always@(posedge clk or negedge rst)
+	always@(posedge clk)
 		begin
 			if(!rst) 
 				begin
@@ -46,94 +46,132 @@ module decode(
 					op2select <=1'h0;
 					w_control <= 2'h0;
 					mem_control <= 1'h0;
+					
 				end
-			else
-				begin
-					if( enable_decode == 1'h0)
-						begin
-							ir <= ir;
-							npc_out <= npc_out;
-							alu_control <= alu_control;
-							pcselect1 <=pcselect1;
-							pcselect2 <= pcselect2;
-							op2select <= op2select;
-							w_control <= w_control;
-							mem_control <= mem_control;
-						end
-					else 
-						begin
-							ir <= instr_mem_dout;
-							npc_out <= npc_in;	
-							
-							case(ir[15:12])
-								BR:		w_control <= 2'b00;
-								ADD:	w_control <= 2'b00;
-								LD:		w_control <= 2'b01;
-								ST: 	w_control <= 2'b00;
-								AND:	w_control <= 2'b00;
-								LDR: 	w_control <= 2'b01;
-								STR: 	w_control <= 2'b00;
-								NOT:	w_control <= 2'b00;
-								LDI: 	w_control <= 2'b01;
-								STI: 	w_control <= 2'b00;
-								JMP:	w_control <= 2'b00;
-								LEA: 	w_control <= 2'b10;
-								default:	w_control <= 2'bxx;
-							endcase
-							case(ir[15:12])
-								LD:	mem_control <= 1'b0;
-								ST: 	mem_control <= 1'b0;
-								LDR: 	mem_control <= 1'b0;
-								STR: 	mem_control <= 1'b0;
-								LDI: 	mem_control <= 1'b1;
-								STI: 	mem_control <= 1'b1;
-								default:	mem_control <= 1'bx;
-							endcase
-							
-							case(ir[15:12])
-								ADD:	alu_control <= 2'b00;
-								AND:	alu_control <= 2'b01;
-								NOT:	alu_control <= 2'b10;
-								default:	alu_control <= 2'bxx;
-							endcase
-							
-							case(ir[15:12])
-								ADD:	begin
-											op2select <= ir[5]? 1'b0:1'b1;
-										end
-								AND:	begin
-											op2select <= ir[5]? 1'b0:1'b1;
-										end
-								default:    op2select <= 1'bx;		
-							endcase
-							
-							case(ir[15:12])
-								BR:	pcselect1 <= 2'b01;
-								LD:	pcselect1 <= 2'b01;
-								ST: 	pcselect1 <= 2'b01;
-								LDR: 	pcselect1 <= 2'b10;
-								STR: 	pcselect1 <= 2'b10;
-								LDI: 	pcselect1 <= 2'b01;
-								STI: 	pcselect1 <= 2'b01;
-								JMP:	pcselect1 <= 2'b11;
-								LEA: 	pcselect1 <= 2'b01;
-								default:	pcselect1 <= 2'bxx;
-							endcase
-							
-							case(ir[15:12])
-								BR:	pcselect2 <= 1'b1;
-								LD:	pcselect2 <= 1'b1;
-								ST: 	pcselect2 <= 1'b1;
-								LDR: 	pcselect2 <= 1'b0;
-								STR: 	pcselect2 <= 1'b0;
-								LDI: 	pcselect2 <= 1'b1;
-								STI: 	pcselect2 <= 1'b1;
-								JMP:	pcselect2 <= 1'b0;
-								LEA: 	pcselect2 <= 1'b1;
-								default:	pcselect2 <= 1'bx;
-							endcase
-						end
+			else begin
+				if(enable_decode == 1'b0) begin
+					ir <= ir;
+					npc_out <= npc_out;
+					alu_control <= alu_control;
+					pcselect1 <=pcselect1;
+					pcselect2 <= pcselect2;
+					op2select <= op2select;
+					w_control <= w_control;
+					mem_control <= mem_control;
 				end
+				else begin
+					ir <= instr_mem_dout;
+					npc_out <= npc_in;	
+						
+					casex(instr_mem_dout[15:12])
+						BR:		begin 
+									w_control <= 2'b00;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									mem_control <=  1'bx;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						ADD:	begin 
+									w_control <= 2'b00;
+									alu_control <= 2'b00;
+									op2select <= instr_mem_dout[5]? 1'b0:1'b1;
+									mem_control <=  1'bx;
+									pcselect1 <= 2'bxx;
+									pcselect2 <= 1'bx;
+								end
+						LD:		begin
+									w_control <= 2'b01;
+									mem_control <= 1'b0;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						ST: 	begin 
+									w_control <= 2'b00;
+									mem_control <= 1'b0;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						AND:	begin
+									w_control <= 2'b00;
+									alu_control <= 2'b01;
+									op2select <= instr_mem_dout[5]? 1'b0:1'b1;
+									mem_control <=  1'bx;
+									pcselect1 <= 2'bxx;
+									pcselect2 <= 1'bx;
+								end
+						LDR: 	begin
+									w_control <= 2'b01;
+									mem_control <= 1'b0;
+									pcselect1 <= 2'b10;
+									pcselect2 <= 1'b0;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						STR: 	begin
+									w_control <= 2'b00;
+									mem_control <= 1'b0;
+									pcselect2 <= 1'b0;
+									pcselect1 <= 2'b10;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						NOT:	begin
+									w_control <= 2'b00;
+									alu_control <= 2'b10;
+									mem_control <=  1'bx;
+									pcselect1 <= 2'bxx;
+									pcselect2 <= 1'bx;
+									op2select <= 1'bx;
+								end									
+						LDI: 	begin
+									w_control <=  2'b01;
+									mem_control <= 1'b1;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						STI: 	begin
+									w_control <=  2'b00;
+									mem_control <= 1'b1;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						JMP:	begin
+									w_control <= 2'b00;
+									pcselect1 <= 2'b11;
+									pcselect2 <= 1'b0;
+									mem_control <=  1'bx;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						LEA: 	begin
+									w_control <= 2'b10;
+									pcselect1 <= 2'b01;
+									pcselect2 <= 1'b1;
+									mem_control <=  1'bx;
+									alu_control <= 2'bxx;
+									op2select <= 1'bx;
+								end
+						default:	begin
+										w_control <= 2'bxx;
+										mem_control <= 1'bx;
+										alu_control <= 2'bxx;
+										op2select <= 1'bx;	
+										pcselect1 <= 2'bxx;
+										pcselect2 <= 1'bx;
+									end	
+					endcase
+									
+				end
+			end
 		end
 		
 

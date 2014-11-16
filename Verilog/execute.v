@@ -19,7 +19,7 @@ module execute(
 				output reg mem_control_out,
 				output reg [15:0] aluout,	
 				output reg [15:0] pcout,	
-				output reg [3:0] dr,
+				output reg [2:0] dr,
 				output [2:0] sr1,			// Asynchronously created
 				output [2:0] sr2,			// Asynchronously created
 				output [15:0] ir_exec,		

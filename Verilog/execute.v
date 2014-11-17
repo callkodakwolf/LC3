@@ -46,7 +46,7 @@ module execute(
 	wire [15:0] new_pc;
 	wire [15:0] pc_adder_input1, pc_adder_input2;
 	wire [15:0] aluin1, aluin2;
-	wire [15:0] sxt_offset9, sxt_offset6;
+	wire [15:0] imm5, sxt_offset11, sxt_offset9, sxt_offset6;
 	wire [1:0] alu_control, pcselect1;
 	wire pcselect2, op2select;
 	
@@ -54,15 +54,23 @@ module execute(
 	assign pcselect1 = e_control[3:2];
 	assign pcselect2 = e_control[1];
 	assign op2select = e_control[0];
-	assign aluin1 = VSR1;
-	assign aluin2 = (op2select)? VSR2: ir[4:0];
+		
+	/*	sign extension for IR ( instruction) */
+	assign imm5 = {11'b00000000000, ir[4:0]};
+	assign sxt_offset11 = {{5{ir[5]}},ir[10:0]};
 	assign sxt_offset9 = {{7{ir[8]}},ir[8:0]};
 	assign sxt_offset6 = {{10{ir[5]}},ir[5:0]};
+
+	assign aluin1 = VSR1;
+	assign aluin2 = (op2select)? VSR2: ir[4:0];
 	
 	assign sr2 = ir[2:0];
 	assign sr1 = ir[8:6];
 	assign pc_adder_input2 = (pcselect2)? npc_in: VSR1;
 	
+	Mux_4_16	Mux_4_alu_adder_1(sxt_offset11, sxt_offset9, sxt_offset6, 16'h0000, pcselect1, pc_adder_input1);
+	Mux_2_16 	Mux_2_alu_adder_2(VSR1, npc_in, pcselect2, pc_adder_input2);
+	Mux_2_16	Mux_2_alu_control2( imm5, VSR2, op2select, aluin2);
 	
 	always@(posedge clk) begin
 		if(!rst) begin
@@ -82,26 +90,14 @@ module execute(
 			else begin
 				dr <= ir[11:9];
 				w_control_out <= w_control_in;
-				casex(pcselect1) 
-					offset9: begin
-								pcout <= sxt_offset9 + pc_adder_input2;
-							 end
-					offset6: begin
-								pcout = sxt_offset6 + pc_adder_input2;
-							 end
-					offset0: begin
-								pcout = 16'h0000 + pc_adder_input2;
-							 end
-					default: begin 						// update for offset11 situation
-								pcout = 16'hxxxx + pc_adder_input2;
-							 end			
-				endcase
+				pcout <= pc_adder_input1 + pc_adder_input2;
+				
 				casex(alu_control)
 					2'b00: 	begin
 								aluout <= aluin1+aluin2;
 							end
 					2'b01:  begin
-								aluout <= aluin1 & aluin1;
+								aluout <= aluin1 & aluin2;
 							end
 					2'b10: 	begin
 								aluout <= ~aluin1;

@@ -12,7 +12,7 @@ module PSR_NZP_Reg(
 		end
 		else begin
 			if( !enable ) begin
-				psr <= psr;
+				psr <= 3'b000;
 			end
 			else begin
 				casex( Exec_stage_result)

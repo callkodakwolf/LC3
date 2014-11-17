@@ -76,22 +76,27 @@ module execute(
 		if(!rst) begin
 			dr <= 3'b000;
 			w_control_out <= 2'b00;
+			mem_control_out <= 1'b0;
 			pcout <= 16'h0000;
 			aluout <= 16'h0000;
+			ir_exec <= 16'h0000;
 		end
 		else begin
 			if(!enable_execute)begin
 				dr <= dr;
 				w_control_out <= w_control_out;
+				mem_control_out <= mem_control_out;
 				pcout <= pcout;
 				aluout <= aluout;
+				ir_exec <= ir_exec;
 				
 			end
 			else begin
 				dr <= ir[11:9];
 				w_control_out <= w_control_in;
+				mem_control_out <= mem_control_in;
 				pcout <= pc_adder_input1 + pc_adder_input2;
-				
+				ir_exec <= ir;
 				casex(alu_control)
 					2'b00: 	begin
 								aluout <= aluin1+aluin2;
